@@ -10,9 +10,13 @@ export default createStore({
       categorias: [],
       estado: '',
       numero: 0,
-    }
+    },
+    user: null
   },
   mutations: {
+    setUser(state, payload) {
+      state.user = payload
+    },
     cargar(state, payload) {
       state.tareas = payload
     },
@@ -35,9 +39,14 @@ export default createStore({
     }
   },
   actions: {
-    async cargarTareas({commit}) {
+    async cargarTareas({commit, state}) {
+      if (localStorage.getItem('usuario')) {
+        commit('setUser', JSON.parse(localStorage.getItem('usuario')))
+      } else {
+        return commit('setUser', null)
+      }
       try {
-        const res = await fetch('https://api-formulario-udemy-8fe1a-default-rtdb.firebaseio.com/tareas.json', {
+        const res = await fetch(`https://api-formulario-udemy-8fe1a-default-rtdb.firebaseio.com/tareas/${state.user.localId}.json?auth=${state.user.idToken}`, {
           method: 'GET'
         })
 
@@ -53,9 +62,9 @@ export default createStore({
         console.log(error);
       }
     },
-    async setTareas({ commit }, tarea) {
+    async setTareas({ commit, state }, tarea) {
       try {
-        await fetch(`https://api-formulario-udemy-8fe1a-default-rtdb.firebaseio.com/tareas/${tarea.id}.json`, {
+        await fetch(`https://api-formulario-udemy-8fe1a-default-rtdb.firebaseio.com/tareas/${state.user.localId}/${tarea.id}.json?auth=${state.user.idToken}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
@@ -68,9 +77,9 @@ export default createStore({
       }
       commit('set', tarea)
     },
-    async deleteTarea({commit}, tareaId) {
+    async deleteTarea({commit, state}, tareaId) {
       try {
-        await fetch(`https://api-formulario-udemy-8fe1a-default-rtdb.firebaseio.com/tareas/${tareaId}.json`, {
+        await fetch(`https://api-formulario-udemy-8fe1a-default-rtdb.firebaseio.com/tareas/${state.user.localId}/${tareaId}.json?auth=${state.user.idToken}`, {
           method: 'DELETE',
         })
         commit('eliminar', tareaId)
@@ -81,9 +90,9 @@ export default createStore({
     listTareaToEdit({commit}, tarea) {
       commit('editar', tarea)
     },
-    async updateTarea({commit}, tarea) {
+    async updateTarea({commit, state}, tarea) {
       try {
-        const res = await fetch(`https://api-formulario-udemy-8fe1a-default-rtdb.firebaseio.com/tareas/${tarea.id}.json`, {
+        const res = await fetch(`https://api-formulario-udemy-8fe1a-default-rtdb.firebaseio.com/tareas/${state.user.localId}/${tarea.id}.json?auth=${state.user.idToken}`, {
           method: 'PATCH',
           body: JSON.stringify(tarea)
         })
@@ -93,6 +102,66 @@ export default createStore({
       } catch (error) {
         console.log(error);
       }
+    },
+    async registerUser({commit}, user) {
+      try {
+        const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyAEYL-t69-pAqCPxATSWLWerbzgMQNPHg8`,{
+          method: 'POST',
+          headers: {
+            'Content-type': 'application.json'
+          },
+          body: JSON.stringify({
+            email: user.email,
+            password: user.password,
+            returnSecureToken: true
+          })
+        })
+        console.log(userDB);
+        const userDB = await res.json()
+        if (userDB.error) {
+          console.log(userDB.error);
+          return
+        }
+        commit('setUser', dataDB)
+        router.push('/')
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    async loginUser({commit}, user) {
+      try {
+        const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyAEYL-t69-pAqCPxATSWLWerbzgMQNPHg8`, {
+          method: 'POST',
+          headers: {
+            'Content-type': 'application.json'
+          },
+          body: JSON.stringify({
+            email: user.email,
+            password: user.password,
+            returnSecureToken: true
+          })
+        })
+        const userDB = await res.json()
+        // console.log(userDB);
+        if (userDB.error) {
+          return console.log(userDB.error);
+        }
+        commit('setUser', userDB)
+        router.push('/')
+        localStorage.setItem('usuario', JSON.stringify(userDB))
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    async LogOut({commit}) {
+      commit('setUser', null)
+      router.push('/ingreso')
+      localStorage.removeItem('usuario')
+    }
+  },
+  getters: {
+    userAutentication(state) {
+      return !!state.user
     }
   },
   modules: {

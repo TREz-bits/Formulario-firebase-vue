@@ -31,7 +31,7 @@ export default {
     InputComponent, ListarTareas
   },
   methods: {
-    ...mapActions(['setTareas']),
+    ...mapActions(['setTareas', 'cargarTareas']),
     procesarFormulario() {
       console.log(this.tarea);
       if (this.tarea.nombre.trim() === "") {
@@ -58,6 +58,9 @@ export default {
     },
   },
   computed: {
+  },
+  created() {
+    this.cargarTareas()
   }
 }
 </script>
