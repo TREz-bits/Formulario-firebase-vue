@@ -13,6 +13,9 @@
             class="form-control my-2"
             v-model.trim="password"
         />
+        <div class="alert alert-danger" v-if="error.type != null">
+            {{error.message}}
+        </div>
         <button
             type="submit"
             class="btn btn-outline-light btn-block mr-auto ml-auto w-50 my-3"
@@ -24,7 +27,7 @@
 </template>
 
 <script>
-import { mapActions } from "vuex";
+import { mapActions, mapState } from "vuex";
 export default {
     data() {
         return {
@@ -33,6 +36,7 @@ export default {
         };
     },
     computed: {
+        ...mapState(['error']),
         bloquear() {
             if (!this.email.includes("@")) {
                 return true;
@@ -41,8 +45,11 @@ export default {
     },
     methods: {
         ...mapActions(["loginUser"]),
-        procesarFormulario() {
-            this.loginUser({ email: this.email, password: this.password });
+        async procesarFormulario() {
+            await this.loginUser({ email: this.email, password: this.password });
+            if (this.error.type !== null) {
+                return
+            }
             this.email = "";
             this.password = "";
         },
