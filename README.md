@@ -3,7 +3,7 @@
 ## Tecnologias Utilizadas
 -*Firebase*
 
--*Vue*
+-*Vue*(vue-router, vuex)
 
 ### Puedes visualizarlo aqui
 
